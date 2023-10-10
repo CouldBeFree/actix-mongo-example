@@ -16,20 +16,16 @@ pub struct UserRepo {
 
 impl UserRepo {
     pub async fn init(db: &Database) -> Self {
-        let col: Collection<User> = db.collection("User");
+        let col: Collection<User> = db.collection("user");
         UserRepo { col }
     }
-
-    // pub async fn get_user_by_id(&self, id: &String) -> Option<User> {
-
-    // }
 
     pub async fn create_user(&self, new_user: User) -> Result<InsertOneResult, Error> {
         let new_doc = User {
             id: None,
             name: new_user.name,
             location: new_user.location,
-            posts: None
+            posts: Some(vec![])
         };
         let user = self
             .col
