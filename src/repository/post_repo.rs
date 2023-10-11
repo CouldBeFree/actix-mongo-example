@@ -4,6 +4,7 @@ use mongodb::{
     bson::{extjson::de::Error, oid::ObjectId, doc},
     results::InsertOneResult,
     results::UpdateResult,
+    results::DeleteResult,
     Collection, Database
 };
 
@@ -67,7 +68,7 @@ impl PostRepo {
             .expect("Error gettting post detail");
         match post_detail {
             Some(user) => Ok(user),
-            None => Err(Error::DeserializationError { message: "User not found".to_string() })
+            None => Err(Error::DeserializationError { message: "Post not found".to_string() })
         }
     }
 
@@ -88,5 +89,37 @@ impl PostRepo {
             .ok()
             .expect("Error updating user");
         Ok(updated_doc)
+    }
+
+    pub async fn remove_post(&self, id: &String, user_repo: &UserRepo) -> Result<DeleteResult, Error> {
+        let user_id = "65254ced6813e0fc1019cff9".to_string();
+        let user = user_repo.get_user(&user_id).await;
+        let post_id = ObjectId::parse_str(id)?;
+        match user {
+            Ok(user) => {
+                let new_doc = doc! {
+                    "$pull": {
+                        "posts": post_id
+                    }
+                };
+                user_repo
+                    .col
+                    .update_one(doc! {"_id": user.id}, new_doc, None)
+                    .await
+                    .ok()
+                    .expect("Error updating user");
+
+                let obj_id = ObjectId::parse_str(id)?;
+                let filter = doc! {"_id": obj_id};
+                let post_detail = self
+                    .col
+                    .delete_one(filter, None)
+                    .await
+                    .ok()
+                    .expect("Error deleting user");
+                return Ok(post_detail)
+            },
+            Err(e) => return Err(Error::DeserializationError{message: e.to_string()}),
+        }
     }
 }

@@ -67,10 +67,29 @@ pub async fn update_post(db: Data<AppState>, path: Path<String>, new_post: Json<
     };
     let update_result = db.post_repo.update_post(&id, data).await;
     match update_result {
-        Ok(user) => {
+        Ok(_) => {
             let post = db.post_repo.get_post(&id).await.ok();
             HttpResponse::Ok().json(Some(post))
         },
         Err(err) => HttpResponse::BadRequest().json(Error{error: err.to_string()})
+    }
+}
+
+#[delete("/post/{id}")]
+pub async fn delete_post(db: Data<AppState>, path: Path<String>) -> HttpResponse {
+    let id = path.into_inner();
+    if id.is_empty() {
+        return HttpResponse::BadRequest().body("Invalid ID");
+    };
+    let result = db.post_repo.remove_post(&id, &db.user_repo).await;
+    match result {
+        Ok(res) => {
+            if res.deleted_count == 1 {
+                return HttpResponse::Ok().json("Post successfully deleted!")
+            } else {
+                return HttpResponse::NotFound().json("Post with specified ID not found");
+            }
+        }
+        Err(err) => HttpResponse::InternalServerError().body(err.to_string()),
     }
 }
