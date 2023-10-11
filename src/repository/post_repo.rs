@@ -3,6 +3,7 @@ extern crate dotenv;
 use mongodb::{
     bson::{extjson::de::Error, oid::ObjectId, doc},
     results::InsertOneResult,
+    results::UpdateResult,
     Collection, Database
 };
 
@@ -53,5 +54,39 @@ impl PostRepo {
             },
             Err(e) => return Err(Error::DeserializationError{message: e.to_string()}),
         }
+    }
+
+    pub async fn get_post(&self, post_id: &String) -> Result<Post, Error> {
+        let obj_id = ObjectId::parse_str(post_id)?;
+        let filter = doc!{"_id": obj_id};
+        let post_detail = self
+            .col
+            .find_one(filter, None)
+            .await
+            .ok()
+            .expect("Error gettting post detail");
+        match post_detail {
+            Some(user) => Ok(user),
+            None => Err(Error::DeserializationError { message: "User not found".to_string() })
+        }
+    }
+
+    pub async fn update_post(&self, id: &String, new_post: Post) -> Result<UpdateResult, Error> {
+        let obj_id = ObjectId::parse_str(id)?;
+        let filter = doc! {"_id": obj_id};
+        let new_doc = doc! {
+            "$set": {
+                "id": new_post.id,
+                "title": new_post.title,
+                "content": new_post.content,
+            }
+        };
+        let updated_doc = self
+            .col
+            .update_one(filter, new_doc, None)
+            .await
+            .ok()
+            .expect("Error updating user");
+        Ok(updated_doc)
     }
 }

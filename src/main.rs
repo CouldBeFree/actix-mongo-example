@@ -7,7 +7,7 @@ mod app_state;
 use actix_web::{App, HttpServer, middleware::Logger, web::Data};
 use env_logger::Env;
 use api::user_api::{create_user, get_user, update_user, delete_user, get_all_users};
-use api::post_api::{create_post};
+use api::post_api::{create_post, get_post, update_post};
 use repository::user_repo::UserRepo;
 use repository::post_repo::PostRepo;
 use db::db::DatabaseInstance;
@@ -36,6 +36,8 @@ async fn main() -> std::io::Result<()> {
             .service(delete_user)
             .service(get_all_users)
             .service(create_post)
+            .service(get_post)
+            .service(update_post)
     })
         .bind(("127.0.0.1", 6069))?
         .run()
