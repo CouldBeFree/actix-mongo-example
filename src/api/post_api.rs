@@ -35,7 +35,7 @@ pub async fn create_post(db: Data<AppState>, new_post: Json<Post>) -> HttpRespon
 pub async fn get_post(db: Data<AppState>, path: Path<String>) -> HttpResponse {
     let id = path.into_inner();
     if id.is_empty() {
-        return HttpResponse::BadRequest().body("Invalid Id");
+        return HttpResponse::BadRequest().json(Error{error: "Invalid Id".to_string()});
     }
     let user_detail = db.post_repo.get_post(&id).await;
     match user_detail {
@@ -79,15 +79,15 @@ pub async fn update_post(db: Data<AppState>, path: Path<String>, new_post: Json<
 pub async fn delete_post(db: Data<AppState>, path: Path<String>) -> HttpResponse {
     let id = path.into_inner();
     if id.is_empty() {
-        return HttpResponse::BadRequest().body("Invalid ID");
+        return HttpResponse::BadRequest().json(Error{error: "Invalid ID".to_string()});
     };
     let result = db.post_repo.remove_post(&id, &db.user_repo).await;
     match result {
         Ok(res) => {
             if res.deleted_count == 1 {
-                return HttpResponse::Ok().json("Post successfully deleted!")
+                return HttpResponse::Ok().json(Error{error: "Post successfully deleted!".to_string()});
             } else {
-                return HttpResponse::NotFound().json("Post with specified ID not found");
+                return HttpResponse::NotFound().json(Error{error: "Post with specified ID not found".to_string()});
             }
         }
         Err(err) => HttpResponse::InternalServerError().body(err.to_string()),
